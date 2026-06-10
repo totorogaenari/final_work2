@@ -992,6 +992,7 @@ function windowResized() {
   if (typeof nameInput !== "undefined" && nameInput !== null) {
     nameInput.position(windowWidth / 2 - 150, windowHeight / 2);
   }
+  if (typeof stage1WindowResized === "function") stage1WindowResized();
 }
 
 // ============================================================
