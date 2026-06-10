@@ -129,9 +129,8 @@ function drawFinalEnding() {
     if (typeof drawSaveButton === "function") drawSaveButton();
   }
  
-  // =========================
+
   // 페이드 아웃
-  // =========================
   else if (scene === "fadeout") {
  
     let currentBg =
