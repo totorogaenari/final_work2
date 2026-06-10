@@ -65,7 +65,7 @@ function setupFinalEnding() {
     { speaker: "", text: "(거대한 문이 천천히 열린다.)", icon: null },
     { speaker: "", text: "(양옆에는 병사들과 귀족들이\n끝없이 늘어서 있다.)", icon: null },
     { speaker: "", text: "(수많은 시민들의 시선이\n당신에게 향한다.)", icon: null },
-    { speaker: "[시민들]", text: "“…저 사람이?”\n“새로운 왕이라고?”\n“술주정뱅이 용병이었다던데…”", icon: null },
+    { speaker: "[시민들]", text: "…저 사람이?\n새로운 왕이라고?\n술주정뱅이 용병이었다던데…", icon: null },
     { speaker: "[나]", text: "…….", icon: mainChar },
     { speaker: "", text: "(카렌이 천천히 왕좌 앞으로 걸어나간다.)", icon: null },
     { speaker: "[카렌]", text: "전 왕국민에게 고합니다.", icon: man },
@@ -114,7 +114,6 @@ function drawFinalEnding() {
     text(d.speaker, width / 6, height / 1.5);
     
     textAlign(CENTER, CENTER);
-    // 타이핑 효과 없이 바로 d.text 출력
     text(d.text, width / 2, height / 1.3);
  
     // 아이콘
@@ -125,6 +124,9 @@ function drawFinalEnding() {
     fill(255);
     textSize(22);
     text(">> ENTER 키를 눌러 진행", width / 1.4, height - 60);
+
+    // 저장 버튼
+    if (typeof drawSaveButton === "function") drawSaveButton();
   }
  
   // =========================
@@ -139,8 +141,8 @@ function drawFinalEnding() {
  
     rectMode(CORNER);
  
-  fill(0, fadeAlpha2);
-  rect(0, 0, width, height);
+    fill(0, fadeAlpha2);
+    rect(0, 0, width, height);
  
     fadeAlpha2 += 2;
  
@@ -273,10 +275,7 @@ function drawCredits() {
  
   // 위로 스크롤
   creditsY -= 3;
-  // =========================
-  // 크레딧 종료 후 스타트 화면
-  // =========================
- 
+
   if (creditsY < -1200) {
     scene = "creditsEnd";
     creditsEndTimer = millis();
@@ -301,6 +300,9 @@ function drawCreditsEnd() {
         introBgm.setVolume(0.5);
         introBgm.loop();
     }
+    // 게임 클리어 후 저장 데이터 삭제 (새 게임만 가능하도록)
+    if (typeof clearSaveData === "function") clearSaveData();
+
     scene = "start";
     creditsY = height;
     fadeAlpha2 = 0;
@@ -309,49 +311,37 @@ function drawCreditsEnd() {
   }
 }
  
-//
- 
 // =========================
 // keyPressed
 // =========================
- 
-// final.js
 function finalKeyPressed() {
   if (keyCode !== ENTER) return;
  
   if (scene === "finalScene") {
-    // 현재 대사셋의 마지막 인덱스 계산
     let currentLength = dialogues_final.length;
  
     if (dialogueIndex_final < currentLength - 1) {
-      // 다음 대사로
       dialogueIndex_final++;
     } else {
-      // 현재 대사셋이 끝난 경우
       if (dialogues_final === dialogues_end1) {
-        // end1 → end2로 전환
         dialogues_final = dialogues_end2;
         dialogueIndex_final = 0;
         startDialogue();
       } else {
-        // end2 → fadeout 전환
         fadeAlpha2 = 0;
         scene = "fadeout";
       }
     }
   } else if (scene === "ending") {
-    // 엔딩 화면에서 엔터 → 크레딧
     scene = "credits";
     creditsY = height;
   }
 }
  
- 
 // =========================
 // 새로운 대사 시작
 // =========================
 function startDialogue() {
- 
   displayedText = "";
   charIndex = 0;
 }
