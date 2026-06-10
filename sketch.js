@@ -108,8 +108,6 @@ function setup() {
   introBgm.setVolume(0.5);
   introBgm.loop();
 
-beforeStage2Dialogues = dialogues7;
-beforeStage2DialogueIndex = 0;
 
   // 첫번째 대화 
   dialogues1 = [
@@ -300,6 +298,13 @@ else if (scene === "stage2Ready") {
   
   
   else if (scene === "story2") {
+  // s2Dialogues가 초기화되지 않았다면 story2 진입 시 초기화
+  if (typeof s2Dialogues === "undefined" || s2Dialogues === null || s2Dialogues === undefined) {
+    if (typeof dialogues7 !== "undefined") {
+      s2Dialogues = dialogues7;
+      s2DialogueIndex = 0;
+    }
+  }
   drawStory2();
 }
 else if (scene === "choice2") {
@@ -335,6 +340,9 @@ else if (scene === "creditsEnd") {
   } else if (typeof nameInput !== "undefined" && nameInput !== null && scene !== "nameInput") { 
     nameInput.hide();
   }
+
+  // 저장 버튼 (항상 최상단에 그리기)
+  drawSaveButton();
 }
 
 function storyDrawScene() {
@@ -386,9 +394,6 @@ function startDraw() {
   fill(255, 180);
   rect(windowWidth / 2, windowHeight / 1.8, windowWidth / 1.3, windowHeight / 3);
 
-  fill(255, 180);
-  rect(windowWidth / 2, windowHeight / 1.18, windowWidth / 2.6, windowHeight / 5.7);
-
   textAlign(CENTER, CENTER);
   fill(0);
   textSize(20);
@@ -399,13 +404,37 @@ function startDraw() {
     "일정 시간 내에 타자를 치면 몬스터에게 공격이 가해집니다.\n" +
     "플레이어는 ->로 공격, <-로 방어를 할 수 있으며\n" +
     "스테이지2에서는 라인 디펜스 기능이 추가됩니다.\n" +
-    "몬스터는 7초마다 한번씩 공격합니다.\n" +
-    "제작자: 방윤정",
+    "몬스터는 7초마다 한번씩 공격합니다.",
     windowWidth / 2, windowHeight / 1.8
   );
 
-  textSize(45);
-  text("START", windowWidth / 2, windowHeight / 1.17);
+  // ── 새 게임 버튼 ──
+  let newGameHover = mouseX >= windowWidth / 2 - windowWidth / 5.2 &&
+                     mouseX <= windowWidth / 2 + windowWidth / 5.2 &&
+                     mouseY >= windowHeight / 1.18 - windowHeight / 11.4 &&
+                     mouseY <= windowHeight / 1.18 + windowHeight / 11.4;
+  fill(newGameHover ? color(220, 200, 150, 230) : color(255, 180));
+  rect(windowWidth / 2 - windowWidth / 6, windowHeight / 1.18, windowWidth / 3.5, windowHeight / 5.7);
+  fill(0);
+  textSize(38);
+  text("새 게임", windowWidth / 2 - windowWidth / 6, windowHeight / 1.17);
+
+  // ── 이어하기 버튼 ──
+  let hasSave = hasSaveData();
+  let continueHover = mouseX >= windowWidth / 2 + windowWidth / 10 - windowWidth / 7 &&
+                      mouseX <= windowWidth / 2 + windowWidth / 10 + windowWidth / 7 &&
+                      mouseY >= windowHeight / 1.18 - windowHeight / 11.4 &&
+                      mouseY <= windowHeight / 1.18 + windowHeight / 11.4;
+  fill(hasSave ? (continueHover ? color(150, 200, 220, 230) : color(255, 180)) : color(180, 180, 180, 150));
+  rect(windowWidth / 2 + windowWidth / 6, windowHeight / 1.18, windowWidth / 3.5, windowHeight / 5.7);
+  fill(hasSave ? 0 : 120);
+  textSize(38);
+  text("이어하기", windowWidth / 2 + windowWidth / 6, windowHeight / 1.17);
+  if (!hasSave) {
+    textSize(16);
+    fill(100);
+    text("(저장 데이터 없음)", windowWidth / 2 + windowWidth / 6, windowHeight / 1.17 + 30);
+  }
 }
 
 function Dialogue1() {
@@ -577,11 +606,34 @@ function broomScene() {
 }
 
 function mousePressed() {
+  // 저장 버튼 클릭 우선 처리
+  if (checkSaveButtonClick()) return;
+
   // 1. 시작 화면
   if (scene === "start") {
-    if (mouseX >= width / 2 - width / 5.2 && mouseX <= width / 2 + width / 5.2 && 
+    // 새 게임 버튼
+    if (mouseX >= width / 2 - width / 3.5 / 2 - width / 6 - width / 3.5 / 2 + width / 6 - width / 5.2 &&
+        mouseX <= width / 2 - width / 6 + width / 3.5 / 2 &&
         mouseY >= height / 1.18 - height / 11.4 && mouseY <= height / 1.18 + height / 11.4) {
+      clearSaveData();
+      resetGameStats();
       scene = "Dialogue1";
+    }
+    // 새 게임 버튼 (좌측)
+    else if (mouseX >= width / 2 - width / 6 - width / 7 &&
+             mouseX <= width / 2 - width / 6 + width / 7 &&
+             mouseY >= height / 1.18 - height / 11.4 && mouseY <= height / 1.18 + height / 11.4) {
+      clearSaveData();
+      resetGameStats();
+      scene = "Dialogue1";
+    }
+    // 이어하기 버튼 (우측)
+    else if (mouseX >= width / 2 + width / 6 - width / 7 &&
+             mouseX <= width / 2 + width / 6 + width / 7 &&
+             mouseY >= height / 1.18 - height / 11.4 && mouseY <= height / 1.18 + height / 11.4) {
+      if (hasSaveData()) {
+        loadGame();
+      }
     }
   } 
   // 2. 대화 선택지 씬들 (기존 로직 유지)
@@ -678,8 +730,8 @@ function keyPressed() {
 
   // ✅ 5. stage2 처리 — scene이 stage2일 때만
 if (scene === "stage2") {
-  // 패배 상태일 때만 선택지 처리 (win은 stage2KeyPressed에서 처리)
   if (gameState2 === "lose") {
+    // 패배 선택지 처리
     if (keyCode === UP_ARROW || keyCode === DOWN_ARROW) {
       select = 1 - select;
     }
@@ -690,10 +742,11 @@ if (scene === "stage2") {
         scene = "start";
       }
     }
-  }
-  // win 포함 나머지는 stage2KeyPressed에 위임
-  if (typeof stage2KeyPressed === "function") {
-    stage2KeyPressed();
+  } else if (gameState2 === "play2") {
+    // 플레이 중일 때만 stage2KeyPressed에 위임 (win/lose 상태에선 호출 안 함)
+    if (typeof stage2KeyPressed === "function") {
+      stage2KeyPressed();
+    }
   }
   return;
 }
@@ -910,6 +963,18 @@ function drawStage2ReadyScene() {
   }
 }
 
+// ==========================================
+// stage2 승리 씬 키 처리 (winScene2 → finalScene)
+// ==========================================
+function keyPressedInWinScene2() {
+  if (keyCode !== ENTER) return;
+  // final 세팅 초기화 후 finalScene으로 전환
+  if (typeof setupFinalEnding === "function") {
+    setupFinalEnding();
+  }
+  scene = "finalScene";
+}
+
 // stage2.js 파일 내부에 작성한 초기화 함수를 메인에서 호출 가능하게 함 
 function prepareStage2() {
   if (typeof resetForStage2 === "function") {
@@ -927,4 +992,185 @@ function windowResized() {
   if (typeof nameInput !== "undefined" && nameInput !== null) {
     nameInput.position(windowWidth / 2 - 150, windowHeight / 2);
   }
+}
+
+// ============================================================
+// 저장/불러오기 시스템
+// ============================================================
+const SAVE_KEY = "rpgGameSave";
+
+// 저장 가능한 씬 목록 (엔딩/미니게임 진행중 제외)
+const SAVEABLE_SCENES = [
+  "Dialogue1","Dialogue2","Dialogue3","help","ignore","weaponSelect",
+  "bottleFail","broom","story","stage1Ready","storyWin","nameInput",
+  "afterName","choice","accept","refuse","stage2Ready",
+  "story2","choice2","ending3","ending_0","ending_1","finalScene"
+];
+
+function hasSaveData() {
+  try {
+    return localStorage.getItem(SAVE_KEY) !== null;
+  } catch(e) { return false; }
+}
+
+function clearSaveData() {
+  try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+}
+
+function saveGame() {
+  try {
+    // dialogues_2 식별 (final.js)
+    let dialogues2Id = "dialogues7";
+    if (typeof dialogues_2 !== "undefined") {
+      if (dialogues_2 === drinkDialogues) dialogues2Id = "drinkDialogues";
+      else if (dialogues_2 === rejectDialogues) dialogues2Id = "rejectDialogues";
+      else if (typeof dialogues8 !== "undefined" && dialogues_2 === dialogues8) dialogues2Id = "dialogues8";
+      else if (typeof dialogues9 !== "undefined" && dialogues_2 === dialogues9) dialogues2Id = "dialogues9";
+    }
+
+    let saveData = {
+      scene: scene,
+      dialogueIndex: dialogueIndex,
+      helpIndex: helpIndex,
+      ignoreIndex: ignoreIndex,
+      bottleIndex: bottleIndex,
+      broomIndex: broomIndex,
+      mainStoryIndex: mainStoryIndex,
+      winIndex: winIndex,
+      acceptIndex: acceptIndex,
+      refuseIndex: refuseIndex,
+      afterNameIndex: afterNameIndex,
+      userName: userName,
+      dialogueIndex_2: typeof dialogueIndex_2 !== "undefined" ? dialogueIndex_2 : 0,
+      dialogues2Id: dialogues2Id,
+      heartbeat: typeof heartbeat !== "undefined" ? heartbeat : false,
+      // finalScene 저장
+      dialogueIndex_final: typeof dialogueIndex_final !== "undefined" ? dialogueIndex_final : 0,
+      dialogues_finalId: (typeof dialogues_final !== "undefined" && typeof dialogues_end2 !== "undefined" && dialogues_final === dialogues_end2) ? "end2" : "end1",
+      savedAt: new Date().toLocaleString("ko-KR")
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+    showSaveNotice("저장 완료!");
+  } catch(e) {
+    showSaveNotice("저장 실패");
+  }
+}
+
+function loadGame() {
+  try {
+    let raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    let d = JSON.parse(raw);
+
+    scene           = d.scene;
+    dialogueIndex   = d.dialogueIndex   || 0;
+    helpIndex       = d.helpIndex       || 0;
+    ignoreIndex     = d.ignoreIndex     || 0;
+    bottleIndex     = d.bottleIndex     || 0;
+    broomIndex      = d.broomIndex      || 0;
+    mainStoryIndex  = d.mainStoryIndex  || 0;
+    winIndex        = d.winIndex        || 0;
+    acceptIndex     = d.acceptIndex     || 0;
+    refuseIndex     = d.refuseIndex     || 0;
+    afterNameIndex  = d.afterNameIndex  || 0;
+    userName        = d.userName        || "";
+    if (typeof heartbeat !== "undefined") heartbeat = d.heartbeat || false;
+
+    // dialogues_2 복원 (final.js)
+    if (typeof dialogueIndex_2 !== "undefined") {
+      dialogueIndex_2 = d.dialogueIndex_2 || 0;
+      if (typeof dialogues_2 !== "undefined") {
+        switch(d.dialogues2Id) {
+          case "drinkDialogues":   dialogues_2 = drinkDialogues;   break;
+          case "rejectDialogues":  dialogues_2 = rejectDialogues;  break;
+          case "dialogues8":       dialogues_2 = dialogues8;       break;
+          case "dialogues9":       dialogues_2 = dialogues9;       break;
+          default:                 dialogues_2 = dialogues7;       break;
+        }
+      }
+    }
+
+    // afterName 복원 시 afterNameDialogues 재생성
+    if (userName && (scene === "afterName" || scene === "choice")) {
+      afterNameDialogues = [
+        { speaker: "[카렌]", text: userName + "입니다.", icon: man },
+        { speaker: "[카렌]", text: userName + "님께서 이번 테스트에서 승리하신다면\n왕의 자리를 드리겠습니다.", icon: man },
+        { speaker: "[나]", text: "...만약 패배한다면?", icon: mainIcon },
+        { speaker: "[카렌]", text: "즉시 처형입니다.", icon: man },
+        { speaker: "[카렌]", text: "제안을 받아들이겠습니까?", icon: man }
+      ];
+    }
+
+    // finalScene 복원
+    if (scene === "finalScene" && typeof dialogueIndex_final !== "undefined") {
+      dialogueIndex_final = d.dialogueIndex_final || 0;
+      // dialogues_end1/end2는 setupFinalEnding()이 호출된 후에야 존재하므로
+      // 씬 진입 시 setupFinalEnding을 먼저 호출한 뒤 인덱스/배열을 덮어씀
+      if (typeof setupFinalEnding === "function") {
+        setupFinalEnding();
+        dialogueIndex_final = d.dialogueIndex_final || 0;
+        if (d.dialogues_finalId === "end2" && typeof dialogues_end2 !== "undefined") {
+          dialogues_final = dialogues_end2;
+        }
+      }
+    }
+  } catch(e) { console.error("불러오기 실패:", e); }
+}
+
+// ── 저장 완료 알림 ──
+let _saveNoticeText = "";
+let _saveNoticeTimer = 0;
+function showSaveNotice(msg) {
+  _saveNoticeText = msg;
+  _saveNoticeTimer = millis();
+}
+
+// ── 저장 버튼 그리기 (draw 루프에서 호출) ──
+function drawSaveButton() {
+  if (!SAVEABLE_SCENES.includes(scene)) return;
+
+  let bw = 130, bh = 44;
+  let bx = windowWidth - bw / 2 - 18;
+  let by = 30;
+
+  let hover = mouseX >= bx - bw/2 && mouseX <= bx + bw/2 &&
+              mouseY >= by - bh/2 && mouseY <= by + bh/2;
+
+  push();
+  rectMode(CENTER);
+  fill(hover ? color(60, 120, 200, 230) : color(30, 80, 160, 200));
+  stroke(200);
+  strokeWeight(1);
+  rect(bx, by, bw, bh, 8);
+  noStroke();
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(18);
+  text("💾 저장하기", bx, by);
+
+  // 저장 완료 알림 (2초)
+  if (_saveNoticeText && millis() - _saveNoticeTimer < 2000) {
+    fill(0, 180, 80, 220);
+    rect(bx, by + 36, bw + 20, 30, 6);
+    fill(255);
+    textSize(15);
+    text(_saveNoticeText, bx, by + 36);
+  } else if (millis() - _saveNoticeTimer >= 2000) {
+    _saveNoticeText = "";
+  }
+  pop();
+}
+
+// ── 저장 버튼 클릭 감지 ──
+function checkSaveButtonClick() {
+  if (!SAVEABLE_SCENES.includes(scene)) return false;
+  let bw = 130, bh = 44;
+  let bx = windowWidth - bw / 2 - 18;
+  let by = 30;
+  if (mouseX >= bx - bw/2 && mouseX <= bx + bw/2 &&
+      mouseY >= by - bh/2 && mouseY <= by + bh/2) {
+    saveGame();
+    return true;
+  }
+  return false;
 }
