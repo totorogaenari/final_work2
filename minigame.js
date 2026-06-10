@@ -587,28 +587,4 @@ text(
   pop();
 }
 
-function mousePressed() {
-  // 현재 화면이 ending1Scene일 때만 버튼 클릭이 작동하도록 조건 추가
-  if (scene === "ending_1") {
-    
-    // 버튼 1 영역 계산 (ending1Scene 코드와 동일)
-    let button1Hover =
-      mouseX >= width / 2 - 175 &&
-      mouseX <= width / 2 + 175 &&
-      mouseY >= height / 1.12 - 55 &&
-      mouseY <= height / 1.12 - 5;
-
-    // 버튼 2 영역 계산 (ending1Scene 코드와 동일)
-    let button2Hover =
-      mouseX >= width / 2 - 175 &&
-      mouseX <= width / 2 + 175 &&
-      mouseY >= height / 1.02 - 55 &&
-      mouseY <= height / 1.02 - 5;
-
-    if (button1Hover) {
-      scene = "choice"; // 이전 선택지로 이동
-    } else if (button2Hover) {
-      scene = "start"; // 처음 화면으로 이동 (start씬의 이름이 'start'라고 가정)
-    }
-  }
-}
+// ending_1 씬의 마우스 처리는 sketch.js mousePressed에서 담당
