@@ -1,5 +1,6 @@
 // 변수 선언
 let glassBreak;
+let drinkbgm;
 
 let dialogues7, dialogues8, dialogues9, drinkDialogues, rejectDialogues;
 let room, lab, hallway, brokenGlassBg;
@@ -11,9 +12,10 @@ let heartbeatSize = 1;
 let s2Dialogues;
 let s2DialogueIndex = 0;
 
-// 이 함수를 sketch.js의 preload에서 호출하세요
+//preload
 function preloadBeforeStage2() {
   glassBreak = loadSound("glass Break.mp3");
+  drinkbgm = loadSound("drink.BGM.mp3");
   room = loadImage("room.png");
   mainChar = loadImage("mainChar.png");
   maidIcon = loadImage("maid.png");
@@ -27,7 +29,7 @@ function preloadBeforeStage2() {
 }
 
 
-
+//setup 
 function setupBeforeStage2() {
 
   createCanvas(windowWidth, windowHeight);
@@ -440,7 +442,22 @@ function drawStory2() {
   if (!s2Dialogues) return;
   let current = s2Dialogues[s2DialogueIndex];
   if (!current) return;
-  
+ 
+  if (
+  current.text === "(하지만 곧 시야가 흔들리기 시작한다.)"
+) {
+  // 기존 room BGM 정지
+  if (roomBGM.isPlaying()) {
+    roomBGM.stop();
+  }
+
+  // drink BGM 재생
+  if (!drinkbgm.isPlaying()) {
+    drinkbgm.setVolume(0.5);
+    drinkbgm.play();
+  }
+}
+  
   // 배경 로직
   let currentBg = room;
   if (s2Dialogues === dialogues8) currentBg = hallway;
@@ -471,7 +488,7 @@ function drawStory2() {
   textAlign(CENTER, CENTER);
   text(current.text, width / 2, height / 1.3);
 
-  if (current.icon) image(current.icon, width / 7, height / 7, 280, 280);
+  if (current.icon) image(current.icon, width / 7, height /5.8, 330, 330);
 }
 
 // 2. 선택지 화면 그리기 함수
@@ -483,8 +500,8 @@ function drawChoice2() {
   fill(0);
   textAlign(CENTER, CENTER);
   textSize(28);
-  text("마신다", width / 1.5, 230);
-  text("마시지 않는다", width / 1.5, 350);
+  text("마신다", width / 1.5, 238);
+  text("마시지 않는다", width / 1.5, 358);
 }
 
 function handleBeforeStage2MousePressed() {
@@ -494,6 +511,20 @@ function handleBeforeStage2MousePressed() {
     // 버튼 1: 이전 선택지로 이동 (다시 choice2 씬으로 전환)
     if (mouseX >= width / 2 - 175 && mouseX <= width / 2 + 175 &&
         mouseY >= height / 1.12 - 55 && mouseY <= height / 1.12 - 5) {
+      
+        // 독 마실 때 재생되던 BGM 정지
+      if (drinkbgm && drinkbgm.isPlaying()) {
+        drinkbgm.stop();
+      }
+
+      // 원래 방 BGM 복구
+      if (roomBGM && !roomBGM.isPlaying()) {
+        roomBGM.setVolume(0.5);
+        roomBGM.loop();
+      }
+
+  heartbeat = false;
+      
       s2Dialogues = dialogues7; // 대화를 다시 초기화
       s2DialogueIndex = 0;
       scene = "choice2"; // 선택지 화면으로 복귀
@@ -519,7 +550,7 @@ function handleBeforeStage2MousePressed() {
     }
   }
 }
-
+// sketch.js의 mousePressed()에서 호출할 핸들러
 function handleBeforeStage2KeyPress() {
   // 1. 스토리 진행 중일 때 (엔터키를 누르면)
   if (scene === "story2" && keyCode === ENTER) {
