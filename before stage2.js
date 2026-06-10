@@ -1,4 +1,6 @@
 // 변수 선언
+let glassBreak;
+
 let dialogues7, dialogues8, dialogues9, drinkDialogues, rejectDialogues;
 let room, lab, hallway, brokenGlassBg;
 let  maidIcon2, maidIcon3, doctor;
@@ -11,6 +13,7 @@ let s2DialogueIndex = 0;
 
 // 이 함수를 sketch.js의 preload에서 호출하세요
 function preloadBeforeStage2() {
+  glassBreak = loadSound("glass Break.mp3");
   room = loadImage("room.png");
   mainChar = loadImage("mainChar.png");
   maidIcon = loadImage("maid.png");
@@ -527,6 +530,13 @@ function handleBeforeStage2KeyPress() {
     }
     
     s2DialogueIndex++;
+    // 쨍그랑 효과음
+    if (
+        s2Dialogues === rejectDialogues &&
+        s2DialogueIndex === 5
+    ) {
+        glassBreak.play();
+    }
     
     // 인덱스가 배열 범위를 벗어날 경우(대화 종료 시)
     if (s2DialogueIndex >= s2Dialogues.length) {
